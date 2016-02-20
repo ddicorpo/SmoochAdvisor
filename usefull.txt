@@ -15,3 +15,4 @@ Smooch.init({appToken: '6y8qj2evmb2h57y0de74vhrqi'});
 </script>
 
 Twillio number (438) 793-7772 ....14387937772
+tripadvisor api key 49023A7B275D49758A2BF5090635B67A
