@@ -1,0 +1,17 @@
+Include the Smooch plugin on your web page
+
+Add the following code towards the end of the <body> section on your page. Placing it at the end allows the rest of the page to load first.
+Copy
+
+<script src="https://cdn.smooch.io/smooch.min.js"></script>
+
+2 Initialize Smooch with your new app token
+
+Once Smooch has been included on your web page, you're almost done. Simply initialize the plugin using this code snippet. This should be placed after the code in Step 1.
+Copy
+
+<script>
+Smooch.init({appToken: '6y8qj2evmb2h57y0de74vhrqi'});
+</script>
+
+Twillio number (438) 793-7772 ....14387937772
