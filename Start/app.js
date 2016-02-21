@@ -5,7 +5,13 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var api = require('./routes/api');
+<<<<<<< HEAD
+
+=======
+
+var rp = require('request-promise');
+
+>>>>>>> origin/master
 
 var app = express();
 
@@ -21,7 +27,37 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/api', api);
+app.post('/smooch/webhook', function (req, res) {
+    var message = req.body.messages[0].text;
+    console.log(message);
+    var options = {
+      uri: 'https://maps.googleapis.com/maps/api/geocode/json',
+      qs: {
+        key: 'AIzaSyBUY6vp9g8CzxSrtCAJFiHg8mrTiaT_1KQ', // -> uri + '?access_token=xxxxx%20xxxxx'
+        address: message
+      },
+      headers: {
+        'User-Agent': 'Request-Promise'
+      },
+      json: true // Automatically parses the JSON string in the response
+    };
+
+rp(options)
+    .then(function (location) {
+      console.log(location.bounds.northeast.lat);
+      return rp({
+        uri: 'https://tripadvisor....'
+      })
+        console.log('User has %d repos', repos.length);
+    })
+    .then(function (tripAdvisorResponse) {
+      smooch.postMessage('here are all the cool restaurants')
+    })
+    .catch(function (err) {
+        // API call failed...
+    });
+    req.send({message:"Todo"});
+  });
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
