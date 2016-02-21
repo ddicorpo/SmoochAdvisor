@@ -39,18 +39,28 @@ app.post('/smooch/webhook', function (req, res) {
     };
 
 rp(options)
-    .then(function (location) {
-      console.log(location.bounds.northeast.lat);
+    .then(function (response) {
+      var longitude = response.results[0].geometry.location.lng;
+      var latitude = response.results[0].geometry.location.lat;
+      var toSend = 'https://api.tripadvisor.com/api/partner/2.0/map/'+latitude+","+longitude;
+      console.log(longitude);
       return rp({
-        uri: 'https://tripadvisor....'
+        uri: toSend,
+        qs: {
+          key: '49023A7B275D49758A2BF5090635B67A'
+       },
+       json: true
       })
-        console.log('User has %d repos', repos.length);
     })
-    .then(function (tripAdvisorResponse) {
-      smooch.postMessage('here are all the cool restaurants')
+     .then(function (tripAdvisorResponse) {
+      var name = tripAdvisorResponse.data[1].name;
+      console.log(name);
+      })
+    .then(function () {
+      res.end();
     })
-    .catch(function (err) {
-        // API call failed...
+    .catch(function (err) {1
+        console.log('err::', err);
     });
     req.send({message:"Todo"});
   });
