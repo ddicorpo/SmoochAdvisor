@@ -5,13 +5,8 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-<<<<<<< HEAD
-
-=======
-
 var rp = require('request-promise');
 
->>>>>>> origin/master
 
 var app = express();
 
