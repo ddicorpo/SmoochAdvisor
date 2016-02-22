@@ -24,17 +24,45 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/smooch/webhook', function (req, res) {
     var message = req.body.messages[0].text;
+	array messageArray = message.split(",");
     console.log(message);
-    var options = {
-      uri: 'https://maps.googleapis.com/maps/api/geocode/json',
-      qs: {
-        key: 'AIzaSyBUY6vp9g8CzxSrtCAJFiHg8mrTiaT_1KQ', // -> uri + '?access_token=xxxxx%20xxxxx'
-        address: message
-      },
-      headers: {
-        'User-Agent': 'Request-Promise'
-      },
-      json: true // Automatically parses the JSON string in the response
+    var options = 
+	{
+		if ( messageArray.size == 3 )
+		{
+			 if ( messageArray[0] == "#Smooch")
+			 {
+				if ( messageArray[2] == "attractions" || messageArray[2] == "hotels" || messageArray[2] == "restaurants")
+				{
+					uri: 'https://maps.googleapis.com/maps/api/geocode/json',
+			 
+				qs:
+				{
+					key: 'AIzaSyBUY6vp9g8CzxSrtCAJFiHg8mrTiaT_1KQ', // -> uri + '?access_token=xxxxx%20xxxxx'
+					address: message
+				},
+			  
+				headers: 
+				{
+					'User-Agent': 'Request-Promise'
+				},
+			  
+				json: true // Automatically parses the JSON string in the response
+				}
+				 else
+				 {
+					console.log("Hi, welsome to Smooch Advisor. Please choose either attractions, hotels or restaurants.  As as example: #Smooch, 1234 mason blvd, restaurant");
+				 }
+			 }
+			else
+			{
+				console.log("Hi, welcome to Smooch Advisor. Begin your message with #Smooch, followed by an address/location and finally end the message with one of the 3 options, attractions/hotels/restaurants (Please use commas in between each section). As as example: #Smooch, 1234 mason blvd, restaurant"); 
+			}
+		}
+		else
+		{
+			console.log("Hi, welcome to Smooch Advisor. Please use commas in between each section. As as example: #Smooch, 1234 mason blvd, restaurant");
+		}
     };
 
 rp(options)
