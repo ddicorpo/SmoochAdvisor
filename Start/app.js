@@ -4,42 +4,53 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
+var webhook = require('./webhook');
 var rp = require('request-promise');
+directionsKey = 'AIzaSyDF3Kz4oTM9dKFft-QAQ9bH537bipzU0h4';
 
 
-var app = express();
+/// mistaken BEGIN --------------------------------------------------------------------
+var mistaken = function(id) {
+  var options = {
+    uri: 'https://api.smooch.io/v1/appusers/' + id + "/conversation/messages",
+    method: 'POST',
+    body: {
+      text: "Welcome to George's SMS D0-IT-ALL, to use our service please begin you're message with #trip or #google and wait for the return message for further instructions.",
+      role: "appMaker"
+    },
+    headers: {
+      'content-type': 'application/json',
+      'authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjU2YzhmMDA2MzRmMTg4MmEwMGVjOWZhMCJ9.eyJzY29wZSI6ImFwcCIsImlhdCI6MTQ1NjAzNzAzMn0.d9rqaYZ9Jc4wzrA6ZSx5Vqw-OTTZ8jsBLoNetdQGMWU',
+      'User-Agent': 'Request-Promise'
+    },
+    json: true // Automatically parses the JSON string in the response
+  };
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
-
-// uncomment after placing your favicon in /public
-//app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.post('/smooch/webhook', function(req, res) {
-  message = req.body.messages[0].text;
-  if (req.body.trigger != "message:appUser") {
+  return rp(options).then(function() {
     res.sendStatus(200);
+    res.end();
     return;
-  }
-  messageArray = message.split(",");
-  smoochmsg = message.substring(0, 7);
-  if (smoochmsg != "#Smooch") {
-    console.log("noSmooch");
-    id = req.body.appUser._id;
-    var options = {
+  }).catch(function(err) {
+    console.log('err::', err);
+  });
+};
+///mistaken END-------------------------------------------------------------------------
+/// tripadvisor Begin -----------------------------------------------------------
+var tripadvisor = function(message, id) {
+  choice = "";
+  var address = "";
+  if (message.match(/hotels/g)) {
+    choice = "hotels";
+  } else if (message.match(/restaurants/g)) {
+    choice = "restaurants";
+  } else if (message.match(/attractions/g)) {
+    choice = "attractions";
+  } else {
+    var tripDefault = {
       uri: 'https://api.smooch.io/v1/appusers/' + id + "/conversation/messages",
       method: 'POST',
       body: {
-        text: "Welcome to Smooch Advisor, to use our service please begin you're message with #Smooch, follow this with an address/location and end you're message with one of three options: restaurants, hotels or attractions. Ex :(#Smooch 4136 stephanie laval hotels)",
+        text: "To use the trip options please begin the message with #trip next enter an address and finaly end the message with either attractions hotels or restaurants",
         role: "appMaker"
       },
       headers: {
@@ -50,35 +61,21 @@ app.post('/smooch/webhook', function(req, res) {
       json: true // Automatically parses the JSON string in the response
     };
 
-    return rp(options).then(function() {
+    return rp(tripDefault).then(function() {
       res.sendStatus(200);
       res.end();
+      return;
     }).catch(function(err) {
       console.log('err::', err);
     });
   }
-  message = message.substring(7);
-  console.log(message);
-  if (message.search("hotels") > 0) {
-    adresss = message.substring(0, message.search("hotels"));
-    fun = "hotels";
-  }
-  if (message.search("attractions") > 0) {
-    adresss = message.substring(0, message.search("attractions"));
-    fun = "attractions";
-  }
-  if (message.search("restaurants") > 0) {
-    adresss = message.substring(0, message.search("restaurants"));
-    fun = "restaurants";
-  }
-
-  console.log(adresss);
-  console.log(fun);
-  var options = {
+  address = message.replace("#trip", "").replace("#Trip", "").replace("hotels", "").replace("restaurants", "").replace("attractions", "");
+  console.log(address);
+  var trip = {
     uri: 'https://maps.googleapis.com/maps/api/geocode/json',
     qs: {
       key: 'AIzaSyBUY6vp9g8CzxSrtCAJFiHg8mrTiaT_1KQ', // -> uri + '?access_token=xxxxx%20xxxxx'
-      address: adresss
+      address: address
     },
     headers: {
       'User-Agent': 'Request-Promise'
@@ -86,16 +83,15 @@ app.post('/smooch/webhook', function(req, res) {
     json: true // Automatically parses the JSON string in the response
   };
 
-  rp(options)
+  rp(trip)
     .then(function(response) {
-
+      console.log('1')
+      console.log(response.results[0]);
       var longitude = response.results[0].geometry.location.lng;
       var latitude = response.results[0].geometry.location.lat;
 
-      console.log(message);
+      var toSend = 'https://api.tripadvisor.com/api/partner/2.0/map/' + latitude + "," + longitude + "/" + choice;
 
-      var toSend = 'https://api.tripadvisor.com/api/partner/2.0/map/' + latitude + "," + longitude + "/" + fun;
-      console.log(longitude);
       return rp({
         uri: toSend,
         qs: {
@@ -104,6 +100,7 @@ app.post('/smooch/webhook', function(req, res) {
         json: true
       }).then(function(tripAdvisorResponse) {
         //response
+        console.log("4");
         strToReturn = "";
         for (var i = 0; i < 10; i++) {
           strToReturn += fun.substring(0, fun.length - 1) + " " + (i + 1) + ": " + tripAdvisorResponse.data[i].name + " ";
@@ -135,6 +132,129 @@ app.post('/smooch/webhook', function(req, res) {
         console.log('err::', err);
       });
     });
+};
+///tripadvisorfunction END ---------------------------------------------------------------------
+///directions BEGIN ----------------------------------------------------------------------------
+var directions = function(message) {
+  message = message.replace("#google", "");
+  var directionsArray = message.split(",");
+  if (directionsArray.length != 2) {
+    var tripDefault = {
+      uri: 'https://api.smooch.io/v1/appusers/' + id + "/conversation/messages",
+      method: 'POST',
+      body: {
+        text: "To use the directions option please begin the message with #google next enter the origin adress followed by a comma and finaly end with the destination adress",
+        role: "appMaker"
+      },
+      headers: {
+        'content-type': 'application/json',
+        'authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjU2YzhmMDA2MzRmMTg4MmEwMGVjOWZhMCJ9.eyJzY29wZSI6ImFwcCIsImlhdCI6MTQ1NjAzNzAzMn0.d9rqaYZ9Jc4wzrA6ZSx5Vqw-OTTZ8jsBLoNetdQGMWU',
+        'User-Agent': 'Request-Promise'
+      },
+      json: true // Automatically parses the JSON string in the response
+    };
+
+    return rp(tripDefault).then(function() {
+      res.sendStatus(200);
+      res.end();
+      return;
+    }).catch(function(err) {
+      console.log("heres the error");
+      console.log('err::', err);
+    });
+  }
+  var origin = directionsArray[0];
+  var destination = directionsArray[1];
+  var directionsOptions = {
+    uri: 'https://maps.googleapis.com/maps/api/directions/json',
+    qs: {
+      key: directionsKey,
+      origin: origin,
+      destination: destination
+    },
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    json: true // Automatically parses the JSON string in the response
+  };
+  return rp(directionsOptions)
+    .then(function(directionsResponse) {
+
+      var directionsToReturn = "";
+      for (var x = 0; x < directionsResponse.routes[0].legs[0].steps.length; x++) {
+        directionsToReturn = directionsToReturn + " -> " + directionsResponse.routes[0].legs[0].steps[x].html_instructions;
+      }
+      directionsToReturn = directionsToReturn.replace(/<(?:.|\n)*?>/gm, '');
+
+      var options = {
+        uri: 'https://api.smooch.io/v1/appusers/' + id + "/conversation/messages",
+        method: 'POST',
+        body: {
+          text: directionsToReturn,
+          role: "appMaker"
+        },
+        headers: {
+          'content-type': 'application/json',
+          'authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjU2YzhmMDA2MzRmMTg4MmEwMGVjOWZhMCJ9.eyJzY29wZSI6ImFwcCIsImlhdCI6MTQ1NjAzNzAzMn0.d9rqaYZ9Jc4wzrA6ZSx5Vqw-OTTZ8jsBLoNetdQGMWU',
+          'User-Agent': 'Request-Promise'
+        },
+        json: true // Automatically parses the JSON string in the response
+      };
+
+      return rp(options).then(function() {
+        res.sendStatus(200);
+        res.end();
+        return;
+      }).catch(function(err) {
+        console.log("heres the error");
+        console.log('err::', err);
+      });
+
+    });
+}
+
+///directions END ------------------------------------------------------------------------------
+
+
+var app = express();
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+// uncomment after placing your favicon in /public
+//app.use(favicon(__dirname + '/public/favicon.ico'));
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.post('/webhook', function(req, res) {
+
+  if (req.body.trigger != "message:appUser") {
+    res.sendStatus(200);
+    return;
+  }
+
+  id = req.body.appUser._id;
+  message = req.body.messages[0].text;
+  console.log(message);
+  if (!message.match(/trip/g) && !message.match(/google/g)) {
+
+    console.log("Did not begin with #trip or #google");
+    mistaken(id);
+  }
+
+  if (message.match(/trip/g)) {
+    tripadvisor(message, id);
+  }
+
+  if (message.match(/google/g)) {
+    directions(message);
+  }
 });
 
 // catch 404 and forward to error handler
