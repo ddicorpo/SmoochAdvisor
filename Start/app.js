@@ -29,7 +29,6 @@ var mistaken = function(id) {
   return rp(options).then(function() {
     res.sendStatus(200);
     res.end();
-    return;
   }).catch(function(err) {
     console.log('err::', err);
   });
@@ -64,7 +63,6 @@ var tripadvisor = function(message, id) {
     return rp(tripDefault).then(function() {
       res.sendStatus(200);
       res.end();
-      return;
     }).catch(function(err) {
       console.log('err::', err);
     });
@@ -157,7 +155,6 @@ var directions = function(message) {
     return rp(tripDefault).then(function() {
       res.sendStatus(200);
       res.end();
-      return;
     }).catch(function(err) {
       console.log("heres the error");
       console.log('err::', err);
@@ -204,7 +201,6 @@ var directions = function(message) {
       return rp(options).then(function() {
         res.sendStatus(200);
         res.end();
-        return;
       }).catch(function(err) {
         console.log("heres the error");
         console.log('err::', err);
